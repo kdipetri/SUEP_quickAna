@@ -21,9 +21,11 @@ def getTriggerList():
             trigs.append(line.split()[0])
     return trigs
 
-def triggerPlots(event,triggerBits,triggerPrescales,trigger_list):
+def event_display(ievt,obj,opt="pflow"):
+
+    plot2D("h_display_{}_{}".format(ievt,opt),";eta;phi",obj.eta(),obj.phi(),100,-3.5,3.5,100,-3.5,3.5,obj.pt())
        
-    return passed_trigger
+    return 
 
 def loop(f,sample):
 
@@ -55,14 +57,17 @@ def loop(f,sample):
     
     # loop over events
     ievt = 0
+    n_displays = 0
     for event in events:
         
         # for debug
         #print(ievt)
         ievt+=1
-        if ievt > 100: break 
+        if ievt > 1000: break
+        #if ievt > 100: break 
+        #if ievt > 1: break 
 
-        if ievt%100==0 : print(ievt)
+        if ievt%10==0 : print(ievt)
     
         # use getByLabel, just like in cmsRun
         event.getByLabel(triggerBitLabel, triggerBits)
@@ -109,6 +114,11 @@ def loop(f,sample):
         plot1D("h_trigger_jet" ,";passed" , passed_jet     ,2,-0.5,1.5)        
 
 
+        if passed_trigger == 1 and n_displays < 10: 
+            n_displays+=1
+            make_display=1
+        else: make_display=0
+
         # *
         # Jets
         # * 
@@ -126,6 +136,7 @@ def loop(f,sample):
                 plot1D("h_jet_pt" ,";jet pt" , jet.pt() , 30,0,100)
                 plot1D("h_jet_eta",";jet eta", jet.eta(), 30,-3.5,3.5)
                 plot1D("h_jet_phi",";jet phi", jet.phi(), 30,-3.5,3.5)
+                if make_display: event_display(ievt,jet,"jets")
         
         plot1D("h_njets",";njets", njets_30, 15,-0.5,14.5)
         plot1D("h_ht"   ,";ht"   , ht      , 50,0,2000)
@@ -135,6 +146,8 @@ def loop(f,sample):
             plot1D("h_trig_ht"   ,";ht"   , ht      , 50,0,2000)
             plot1D("h_trig_mht"  ,";mht"  , mht_vector.Pt(), 30,0,1000)
 
+
+        if passed_trigger ==0 : continue # for QCD debug 
 
         # *
         # Particle Flow Candidates 
@@ -150,6 +163,7 @@ def loop(f,sample):
             if p.charge()!=0 and p.trackHighPurity()==0 : continue #tracks high purity
             
             n_pcand+=1
+            if make_display: event_display(ievt,p,"pflow")
             
             if p.charge() != 0: # track 
                 n_tracks+=1
@@ -194,12 +208,16 @@ def makeHistos():
     setStyle() 
     
     # Get input files
+    # Signal
     path = "root://cmseos.fnal.gov//store/user/kdipetri/SUEP/Production_v0.0/2018/MINIAOD"
-    #infile = "step4_MINIAOD_mMed-1000_mDark-2_temp-2_decay-generic_13TeV-pythia8_n-10_part-1.root"
     #infile = "infiles/mMed-125_mDark-2_temp-2_decay-generic.txt"
     #infile = "infiles/mMed-400_mDark-2_temp-2_decay-generic.txt"
-    infile = "infiles/mMed-750_mDark-2_temp-2_decay-generic.txt"
-    #infile = "infiles/mMed-1000_mDark-2_temp-2_decay-generic.txt"
+    #infile = "infiles/mMed-750_mDark-2_temp-2_decay-generic.txt"
+    infile = "infiles/mMed-1000_mDark-2_temp-2_decay-generic.txt"
+
+    # QCD
+    #path = "root://cmsxrootd.fnal.gov/"
+    #infile = "infiles/QCD_HT1000to1500_TuneCP5_13TeV-madgraphMLM-pythia8.txt"
     if len(sys.argv) > 1: 
         infile = sys.argv[1]
     
@@ -208,6 +226,7 @@ def makeHistos():
     elif "txt" in infile : 
         f = []
         for line in open(infile,"r").readlines(): 
+            if "#" in line: continue
             filename = "{}/{}".format(path,line.strip())
             f.append(filename)    
     else : print("ERROR unknown input format")
