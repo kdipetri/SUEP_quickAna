@@ -27,7 +27,7 @@ def event_display(ievt,obj,opt="pflow"):
        
     return 
 
-def loop(f,sample):
+def loop(f,sample,max_events=-1):
 
     # get events
     # Events takes either
@@ -63,11 +63,11 @@ def loop(f,sample):
         # for debug
         #print(ievt)
         ievt+=1
-        if ievt > 1000: break
+        if max_events > -1 and if ievt > max_events: break
         #if ievt > 100: break 
         #if ievt > 1: break 
 
-        if ievt%10==0 : print(ievt)
+        if ievt%100==0 : print(ievt)
     
         # use getByLabel, just like in cmsRun
         event.getByLabel(triggerBitLabel, triggerBits)
@@ -206,20 +206,25 @@ def makeHistos():
 
     start = time.time()
     setStyle() 
-    
+   
+    #  
     # Get input files
+    # 
+
     # Signal
     path = "root://cmseos.fnal.gov//store/user/kdipetri/SUEP/Production_v0.0/2018/MINIAOD"
-    #infile = "infiles/mMed-125_mDark-2_temp-2_decay-generic.txt"
+    infile = "infiles/mMed-125_mDark-2_temp-2_decay-generic.txt"
     #infile = "infiles/mMed-400_mDark-2_temp-2_decay-generic.txt"
     #infile = "infiles/mMed-750_mDark-2_temp-2_decay-generic.txt"
-    infile = "infiles/mMed-1000_mDark-2_temp-2_decay-generic.txt"
+    #infile = "infiles/mMed-1000_mDark-2_temp-2_decay-generic.txt"
 
     # QCD
     #path = "root://cmsxrootd.fnal.gov/"
     #infile = "infiles/QCD_HT1000to1500_TuneCP5_13TeV-madgraphMLM-pythia8.txt"
-    if len(sys.argv) > 1: 
-        infile = sys.argv[1]
+    
+    if len(sys.argv) > 2: 
+        path = sys.argv[1]
+        infile = sys.argv[2]
     
     if "root" in infile : 
         f = "{}/{}".format(path,infile) 
@@ -231,12 +236,26 @@ def makeHistos():
             f.append(filename)    
     else : print("ERROR unknown input format")
 
-    # get sample name and loop
+    # 
+    # Get max events
+    # 
+
+    max_events=-1
+    if len(sys.argv) > 3: 
+        max_events = sys.argv[3]
+
+    #
+    # Get sample name and loop
+    # 
+
     sample = getSample(infile)
     print(sample)
-    loop(f,sample) 
+    loop(f,sample,max_events) 
     
     
+    # 
+    # Performance
+    # 
     print("It took {} s".format(time.time()-start))
 
 if __name__ == "__main__":
